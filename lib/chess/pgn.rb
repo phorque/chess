@@ -39,7 +39,7 @@ module Chess
     # @param [Hash] options { check_moves: boolean } If true check if the moves are legal.
     # @raise [InvalidPgnFormatError]
     # @raise [IllegalMoveError]
-    def initialize(input, options = {})
+    def initialize(input = nil, options = {})
       options[:check_moves] ||= false
 
       self.load(input, options) if input
