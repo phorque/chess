@@ -66,13 +66,16 @@ module Chess
       end
       @result = '1/2-1/2' if @result == '1/2'
       game_index = data.index(/^1\./)
-      raise Chess::InvalidPgnFormatError.new(input) if game_index.nil?
-      game = data[game_index..-1].strip
-      @moves = game.gsub("\n", ' ').split(/\d+\./).collect{|t| t.strip}[1..-1].collect{|t| t.split(' ')}.flatten
-      @moves.delete_at(@moves.size-1) if @moves.last =~ /(0-1)|(1-0)|(1\/2)|(1\/2-1\/2)|(\*)/
-      @moves.each do |m|
-        if m !~ MOVE_REGEXP && m !~ SHORT_CASTLING_REGEXP && m !~ LONG_CASTLING_REGEXP
-          raise Chess::InvalidPgnFormatError.new(input)
+      if game_index.nil?
+        @moves = []
+      else
+        game = data[game_index..-1].strip
+        @moves = game.gsub("\n", ' ').split(/\d+\./).collect{|t| t.strip}[1..-1].collect{|t| t.split(' ')}.flatten
+        @moves.delete_at(@moves.size-1) if @moves.last =~ /(0-1)|(1-0)|(1\/2)|(1\/2-1\/2)|(\*)/
+        @moves.each do |m|
+          if m !~ MOVE_REGEXP && m !~ SHORT_CASTLING_REGEXP && m !~ LONG_CASTLING_REGEXP
+            raise Chess::InvalidPgnFormatError.new(input)
+          end
         end
       end
       Chess::Game.new(@moves) if options[:check_moves]
