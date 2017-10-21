@@ -35,40 +35,47 @@ module Chess
     # @return [Array<String>]
     attr_accessor :moves
 
-    # @param [String] filename The path of the PGN file.
-    # @param [Boolean] check_moves If true check if the moves are legal.
+    # @param [String<Hash>] input The path of the PGN to load. Alternatively you can use { file: path } to get the same result, or { data: str } to load an instance from a PGN string.
+    # @param [Hash] options { check_moves: boolean } If true check if the moves are legal.
     # @raise [InvalidPgnFormatError]
     # @raise [IllegalMoveError]
-    def initialize(filename = nil, check_moves: false)
-      self.load(filename, check_moves: check_moves) if filename
+    def initialize(input, options = {})
+      options[:check_moves] ||= false
+
+      self.load(input, options) if input
       @date = '??'
       @round = '1'
     end
 
-    # Load a PGN from file.
-    # @param [String] filename The path of the PGN file.
-    # @param [Boolean] check_moves If true check if the moves are legal.
+    # Load a PGN from a file or a string.
+    # @param [String<Hash>] input The path of the PGN to load. Alternatively you can use { file: path } to get the same result, or { data: str } to load a Game from a PGN string.
+    # @param [Hash] options { check_moves: boolean } If true check if the moves are legal.
     # @return [Pgn] Returns `self`.
     # @raise [InvalidPgnFormatError]
     # @raise [IllegalMoveError]
-    def load(filename, check_moves: false)
-      data = File.open(filename, 'r').read
+    def load(input, options = {})
+      data =
+        if input.kind_of?(Hash)
+          input[:path] ? File.open(input[:path], 'r').read : input[:data]
+        else
+          File.open(input, 'r').read
+        end
       data.gsub!(/\{.*?\}/, '') # remove comments
       TAGS.each do |t|
         instance_variable_set("@#{t}", data.match(/^\[#{t.capitalize} ".*"\]\s?$/).to_s.strip[t.size+3..-3])
       end
       @result = '1/2-1/2' if @result == '1/2'
       game_index = data.index(/^1\./)
-      raise Chess::InvalidPgnFormatError.new(filename) if game_index.nil?
+      raise Chess::InvalidPgnFormatError.new(input) if game_index.nil?
       game = data[game_index..-1].strip
       @moves = game.gsub("\n", ' ').split(/\d+\./).collect{|t| t.strip}[1..-1].collect{|t| t.split(' ')}.flatten
       @moves.delete_at(@moves.size-1) if @moves.last =~ /(0-1)|(1-0)|(1\/2)|(1\/2-1\/2)|(\*)/
       @moves.each do |m|
         if m !~ MOVE_REGEXP && m !~ SHORT_CASTLING_REGEXP && m !~ LONG_CASTLING_REGEXP
-          raise Chess::InvalidPgnFormatError.new(filename)
+          raise Chess::InvalidPgnFormatError.new(input)
         end
       end
-      Chess::Game.new(@moves) if check_moves
+      Chess::Game.new(@moves) if options[:check_moves]
       return self
     end
 

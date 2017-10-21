@@ -12,14 +12,14 @@ module Chess
       moves.each { |m| move(m) }
     end
 
-    # Creates a new game from a file in PGN format.
-    # @param [String] file The path of the PGN to laod.
+    # Creates a new game from a file or a string in PGN format.
+    # @param [String<Hash>] input The path of the PGN to load. Alternatively you can use { file: path } to get the same result, or { data: str } to load a Game from a PGN string.
     # @return [Game]
     # @raise [InvalidPgnFormatError]
     # @raise [IllegalMoveError]
     # @raise [BadNotationError]
-    def self.load_pgn(file)
-      pgn = Chess::Pgn.new(file)
+    def self.load_pgn(input = {})
+      pgn = Chess::Pgn.new(input)
       game = Chess::Game.new
       pgn.moves.each { |m| game.move(m) }
       if !game.over?
